@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Attendance</title>
+    <link rel="stylesheet" href="filter.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <ul>
+                <li><a href="index.html">Back to Attendance</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <h1>Filter Attendance by Date</h1>
+            <div class="filter">
+                <input type="date" id="filterDate" placeholder="Select Date">
+                <button id="filterButton">Filter</button>
+                <button id="resetFilterButton">Reset Filter</button>
+            </div>
+            <div class="table-container">
+                <table id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const attendanceTableBody = document.querySelector("#attendanceTable tbody");
+            const filterDateInput = document.getElementById("filterDate");
+            const filterButton = document.getElementById("filterButton");
+            const resetFilterButton = document.getElementById("resetFilterButton");
+        
+            // Load existing records from local storage
+            loadAttendanceRecords();
+        
+            if (filterButton && filterDateInput) {
+                filterButton.addEventListener("click", () => {
+                    const filterDate = filterDateInput.value;
+                    loadAttendanceRecords(filterDate);
+                });
+        
+                resetFilterButton.addEventListener("click", () => {
+                    filterDateInput.value = "";
+                    loadAttendanceRecords();
+                });
+            }
+        
+            // Function to load attendance records and optionally filter them by date
+            function loadAttendanceRecords(filterDate = "") {
+                attendanceTableBody.innerHTML = "";
+                const records = JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+        
+                records.forEach(record => {
+                    const recordDate = new Date(record.date).toISOString().split('T')[0];
+                    if (filterDate && recordDate !== filterDate) return;
+        
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${record.name}</td>
+                        <td>${recordDate}</td>
+                        <td>${record.status}</td>
+                        <td class="actions">
+                            <button class="edit-btn" data-id="${record.id}">Edit</button>
+                            <button class="delete-btn" data-id="${record.id}">Delete</button>
+                        </td>
+                    `;
+                    attendanceTableBody.appendChild(row);
+                });
+        
+                // Attach event listeners for edit and delete buttons
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        editRecord(button.getAttribute('data-id'));
+                    });
+                });
+        
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        deleteRecord(button.getAttribute('data-id'));
+                    });
+                });
+            }
+        
+            // Function to edit a record
+            function editRecord(id) {
+                const records = JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+                const recordToEdit = records.find(record => record.id === parseInt(id));
+        
+                if (recordToEdit) {
+                    // Assuming form fields exist in your HTML for editing
+                    document.getElementById("studentName").value = recordToEdit.name;
+                    document.getElementById("attendanceDate").value = recordToEdit.date;
+                    document.getElementById("attendanceStatus").value = recordToEdit.status;
+                    deleteRecord(id); // Remove the record after loading it for editing
+                }
+            }
+        
+            // Function to delete a record
+            function deleteRecord(id) {
+                let records = JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+                records = records.filter(record => record.id !== parseInt(id));
+                localStorage.setItem("attendanceRecords", JSON.stringify(records));
+                loadAttendanceRecords(); // Reload the records
+            }
+        });
+        
+    </script>
+
+</body>
+</html>
